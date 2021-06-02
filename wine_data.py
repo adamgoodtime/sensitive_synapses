@@ -199,3 +199,16 @@ for wine in raw_data:
     norm_wine.append(normed_wine)
 
 print("normalised wine")
+
+from copy import deepcopy
+training_set_wines = deepcopy(norm_wine)
+training_set_labels = deepcopy(wine_labels)
+test_set_size = 10
+import random
+test_set_indexes = random.sample([i for i in range(len(wine_labels))], test_set_size)
+test_set_wines = [norm_wine[i] for i in test_set_indexes]
+test_set_labels = [wine_labels[i] for i in test_set_indexes]
+test_set_indexes.sort(reverse=True)
+for i in test_set_indexes:
+    del training_set_wines[i]
+    del training_set_labels[i]
