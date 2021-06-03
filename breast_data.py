@@ -701,8 +701,7 @@ breast_data = [[1000025, 5, 1, 1, 1, 2, 1, 3, 1, 1, 2],
 
 
 breast_labels = []
-min_max = [[i, i] for i in breast_data[0]]
-del min_max[0]
+min_max = [[i, i] for i in breast_data[0][1:10]]
 for breast in breast_data:
     if breast[-1] == 2:
         breast_labels.append(0)

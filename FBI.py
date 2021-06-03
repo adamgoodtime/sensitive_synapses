@@ -5,7 +5,7 @@ from copy import deepcopy
 
 
 class Synapses():
-    def __init__(self, pre, post, freq, f_width=0.6, weight=1.):
+    def __init__(self, pre, post, freq, f_width=0.3, weight=1.):
         self.pre = pre
         self.post = post
         self.freq = freq
@@ -17,14 +17,16 @@ class Synapses():
 
 
 class Neuron():
-    def __init__(self, neuron_label, connections):
+    def __init__(self, neuron_label, connections, f_width=0.3):
         self.neuron_label = neuron_label
+        self.f_width = f_width
         self.synapses = {}
         self.synapse_count = len(connections)
         for pre in connections:
             freq = connections[pre]
             self.synapses[pre] = []
-            self.synapses[pre].append(Synapses(pre + '0', neuron_label, freq))
+            self.synapses[pre].append(Synapses(pre + '0', neuron_label, freq,
+                                               f_width=self.f_width))
 
     def add_connection(self, pre, freq, weight=1.):
         self.synapse_count += 1
@@ -32,7 +34,8 @@ class Neuron():
             self.synapses[pre] = []
         self.synapses[pre].append(Synapses(pre + '{}'.format(len(self.synapses[pre])),
                                            self.neuron_label, freq,
-                                           weight=weight))
+                                           weight=weight,
+                                           f_width=self.f_width))
 
     def add_multiple_connections(self, connections):
         for pre in connections:
@@ -40,7 +43,8 @@ class Neuron():
             if pre not in self.synapses:
                 self.synapses[pre] = []
             self.synapses[pre].append(Synapses(pre + '{}'.format(len(self.synapses[pre])),
-                                               self.neuron_label, freq))
+                                               self.neuron_label, freq,
+                                               f_width=self.f_width))
             self.synapse_count += 1
 
     def response(self, activations):
@@ -56,13 +60,17 @@ class Neuron():
 
 
 class Network():
-    def __init__(self, number_of_classes, seed_class, seed_features, error_threshold=0.1):
+    def __init__(self, number_of_classes, seed_class, seed_features,
+                 error_threshold=0.1,
+                 f_width=0.3):
         self.error_threshold = error_threshold
+        self.f_width = f_width
         self.neurons = {}
         self.number_of_classes = number_of_classes
         # add seed neuron
         self.neurons['seed{}'.format(seed_class)] = Neuron('seed{}'.format(seed_class),
-                                                           self.convert_breast_to_activations(seed_features))
+                                                           self.convert_breast_to_activations(seed_features),
+                                                           f_width=f_width)
         # add outputs
         for output in range(number_of_classes):
             self.add_neuron({}, 'out{}'.format(output))
@@ -76,7 +84,8 @@ class Network():
         if neuron_label == '':
             neuron_label = 'n{}'.format(self.hidden_neuron_count)
             self.hidden_neuron_count += 1
-        self.neurons[neuron_label] = Neuron(neuron_label, connections)
+        self.neurons[neuron_label] = Neuron(neuron_label, connections,
+                                            f_width=self.f_width)
         return neuron_label
         #### find a way to know whether you need to add a layer
         # for pre in connections:
@@ -144,13 +153,20 @@ def calculate_error(correct_class, activations, breast_count):
 
 
 epochs = 200
-sensitivity_width = 0.1
+sensitivity_width = 0.9
 error_threshold = 0.01
 seed_class = 0
-BREASneT = Network(2, breast_labels[seed_class], norm_breast[seed_class], error_threshold=error_threshold)
+BREASneT = Network(2, breast_labels[seed_class], norm_breast[seed_class],
+                   error_threshold=error_threshold,
+                   f_width=sensitivity_width)
 all_incorrect_classes = []
+epoch_error = []
 
 for epoch in range(epochs):
+    if epoch == 10:
+        for ep, error in enumerate(epoch_error):
+            print(ep, error)
+        print("it reached 10")
     activations = {}
     breast_count = 0
     correct_classifications = 0
@@ -197,6 +213,7 @@ for epoch in range(epochs):
           correct_classifications)
     print("Test accuracy is ", test_classifications / test_set_size,
           "(", test_classifications, "/", test_set_size, ")")
+    epoch_error.append([correct_classifications, test_classifications / test_set_size])
 
 
 
